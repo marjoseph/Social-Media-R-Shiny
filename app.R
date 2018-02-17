@@ -1,5 +1,5 @@
 
-#Created on Sunday December 21 7:21 PM 2017
+#Created on Sunday December 31 7:21 PM 2017
 #Author: marjoseph
 
 
@@ -18,6 +18,7 @@ library(shinycssloaders)
 library(rsconnect)
 library(tm)
 library(wordcloud)
+library(graphTweets)
 library(tidytext)
 library(shinyjs)
 library(V8)
@@ -35,6 +36,9 @@ library(shinyswipr)
 library(fortunes)
 library(shiny.semantic)
 
+
+
+
 ################################
 ########--Prep for Shiny--######
 ################################
@@ -43,6 +47,9 @@ library(shiny.semantic)
 #Load city/country data for Twitter location trends section
 country_city_list = read_csv("country and city list.csv")
 
+#Load in Troll Tweets from NBC News
+trolls = read_csv("tweets.csv")
+users = read_csv("users.csv")
 #Fix Function for Reddit
 get_reddit = function (search_terms = NA,
                        regex_filter = "",
@@ -603,6 +610,27 @@ shinyApp(
           )
         )
       ),
+    ######################################
+    #######----Begin Troll Page----#######
+    ######################################
+    tabPanel(
+      "Trolls & Propoganda",
+      icon = icon("user-secret"),
+      mainPanel(
+        fluidPage(box(title = "See how Twitter users interacted with Propoganda Accounts")),
+        hr(),
+        sliderInput("slider2", label = h5("Slide to Adjust the Chart"), min = 2, 
+                    max = 100, value = 5),
+        simpleNetworkOutput("troll_plot"),
+          
+        dataTableOutput("troll_table"),
+          
+
+          hr(),
+          hr()
+        
+      )
+    ),
       
       ######################################
       #######--Begin Downloads Page--#######
@@ -1489,7 +1517,23 @@ shinyApp(
     
     #   reddit_plot_url = "https://www.reddit.com/r/InternetIsBeautiful/comments/3oeaz1/summarize_articles_editorials_and_essays/"
     
+    ########################################
+    #####---Troll Visualization Plot---##### 
+    ########################################
+    #Creating the troll node visualization
+  
     
+    output$troll_plot = renderSimpleNetwork({
+    trolltweets1 = trolls[1:input$slider2,]
+    trolltweets1 <- data.frame(lapply(trolltweets1, as.character), stringsAsFactors=FALSE)
+    edges <- getEdges(data = trolltweets1, tweets = "text", source = "user_key")
+    edges <- edges[!duplicated(edges),]
+    simpleNetwork(edges, opacity = 1)
+    })
+    
+    output$troll_table = renderDataTable({
+      users[c(3,4,5,8,9,10,11,12)]
+    })
     ########################################
     ########----Media URL Search----########
     ########################################
